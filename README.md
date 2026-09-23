@@ -15,14 +15,9 @@ When a PC powers on, the BIOS loads the first 512 bytes from disk into memory at
 ## Build & Run
 
 ```bash
-nasm -f bin boot.asm -o boot.bin
-nasm -f bin stage2.asm -o stage2.bin
-nasm -f elf32 kernel/kernel_entry.asm -o kernel/kernel_entry.o
-gcc -m32 -ffreestanding -c kernel/kernel.c -o kernel/kernel.o
-ld -m elf_i386 -T kernel/linker.ld kernel/kernel_entry.o kernel/kernel.o -o kernel/kernel.elf
-objcopy -O binary kernel/kernel.elf kernel/kernel.bin
-cat boot.bin stage2.bin kernel/kernel.bin > os.bin
-qemu-system-i386 -drive format=raw,file=os.bin
+make          # compile everything → os.bin
+make run      # compile and boot in QEMU
+make clean    # remove all generated files
 ```
 
 Requires NASM, GCC (32-bit), binutils, and QEMU (`sudo apt install nasm gcc-multilib binutils qemu-system-x86`).

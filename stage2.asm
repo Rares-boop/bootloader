@@ -24,13 +24,14 @@ _print:
 
 _load_kernel:
     mov ah, 0x02      ; citire sectoare
-    mov al, 5         ; 5 sectoare (destul pentru kernel mic)
+    mov al, 1         ; 5 sectoare (destul pentru kernel mic)
     mov ch, 0         ; cilindru 0
     mov cl, 3         ; sector 3 (1=boot, 2=stage2, 3+=kernel)
     mov dh, 0         ; head 0
     mov dl, 0x80      ; hard disk
     mov bx, 0x1000    ; adresa unde pui kernel-ul (ES:BX = 0x0000:0x1000)
     int 13h
+    jc  _error
 
 _switch:
     cli ; stop the CPU from responding to interrupts (in order to swich from 16-bit to 32-bit)
@@ -45,6 +46,21 @@ _switch:
     ; simple jmp changes only th IP (instruction pointer)
     ; far jump changes the CS (code segment)
     jmp 0x08:_protected_mode ; this is a far jump it changes CS at 0x08 and jumps to the new label
+
+_error:
+    mov si, error_16
+
+_print_error:
+    mov al, [si] ; take the byte from si address
+    inc si ; increment si with 1 so the pointer move to the next byte
+    cmp al, 0 ; compare with 0 to see if we reached the end of the string
+    jz _done ; exit the loop
+    mov ah, 0x0E ; teletype funtion for printing on scree the character
+    int 10h ; interrupt for video funtions
+    jmp _print_error
+
+_done:
+    jmp $
 
 BITS 32
 _protected_mode:
@@ -63,6 +79,7 @@ _print_protected:
     jmp 0x1000
 
 message db 'Stage 2 loading', 0x0D, 0x0A, 0
+error_16    db  "Error in stage 2 on 16-bit real mode", 0x0D, 0x0A, 0
 
 _gdt_start:
 
