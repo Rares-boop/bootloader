@@ -17,10 +17,20 @@ _print:
     mov al, [si]
     inc si
     cmp al, 0
-    jz _switch
+    jz _load_kernel
     mov ah, 0x0E
     int 10h
     jmp _print
+
+_load_kernel:
+    mov ah, 0x02      ; citire sectoare
+    mov al, 5         ; 5 sectoare (destul pentru kernel mic)
+    mov ch, 0         ; cilindru 0
+    mov cl, 3         ; sector 3 (1=boot, 2=stage2, 3+=kernel)
+    mov dh, 0         ; head 0
+    mov dl, 0x80      ; hard disk
+    mov bx, 0x1000    ; adresa unde pui kernel-ul (ES:BX = 0x0000:0x1000)
+    int 13h
 
 _switch:
     cli ; stop the CPU from responding to interrupts (in order to swich from 16-bit to 32-bit)
@@ -50,10 +60,7 @@ _print_protected:
     mov byte [0xB8001 + 0x640], 0x0F ; the colour white on black
     mov byte [0xB8002 + 0x640], 'M'
     mov byte [0xB8003 + 0x640], 0x0F
-    jmp _done
-
-_done:
-    jmp $
+    jmp 0x1000
 
 message db 'Stage 2 loading', 0x0D, 0x0A, 0
 
@@ -84,6 +91,8 @@ _gdt_end:
 _gdt_descriptor:
     dw  _gdt_end - _gdt_start -  1 ; GDT size
     dd  _gdt_start ; GDT address
+
+times 512 - ($ - $$) db 0 ; padding so the stage 2 sector is exactly 512 bytes
 
 
 
